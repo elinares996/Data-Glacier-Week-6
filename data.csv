@@ -1,0 +1,912 @@
+number,id,cell_id,source,ancestor_id,pct_rank
+1,0944b58318b789,fced0b7a,"# Spectrogram-based CNN for the Tensorflow Speech Recognition Challenge (~ 90 % accuracy)
+
+
+The goal of this challenge is to classify 65,000 one-second audio clips for 30 short words, building an algorithm that understands simple spoken command.
+
+This notebooks shows all the steps needed to create a speech model using short audio tracks in a tidy way.
+
+
+## <ins>Notes</ins>
+
+- The notebook is using the CNN architecture published at:
+https://blogs.rstudio.com/ai/posts/2018-06-06-simple-audio-classification-keras/
+
+- The current pipeline is using batch processing and online augmentation, randomly modifying the audio clips before being used to train the network.
+
+
+## <ins>Methods</ins>
+
+- The audio clips are analyzed as images computing Mel-frequency cepstral normalized coefficients (MFCCs). MFCCs are an alternative representation of the Mel-frequency spectrogram. The MFCCs can be obtained applying the discrete cosine transform (DCT) to a Mel-frequency spectrogram (take a look to this article: https://towardsdatascience.com/getting-to-know-the-mel-spectrogram-31bca3e2d9d0). Additional information can be found in any digital signal processing textbook (concepts such as Fourier transform and Short Time Fourier Transform are fundamental).
+
+- To improve the robustness of the algorithm, some online data augmentation methods are sequentially applied to the raw audio clips before computing MFCCs: addition of background noise, audio shifting and pitch modification. Each audio was edited independently with these filters with a chance of 70% in each sequential step.",0212b702,0
+3,59958672e3bf59,9b68df7e,# A simple explanation and implementation of DTs ID3 algorithm in python,8f0f9cda,0
+4,b22e24942614c9,fa089df9,"Name: Aviral Jain | 
+Roll No: 18AG3AI08 | 
+BTP Guide: Prof. Rajendra Machavaram
+
+# Application of Convolutional Neural Networks for Wheat Head Detection",52b2390a,0
+5,59959edc72f7c1,815f8d1f,"<img src=""https://drive.google.com/uc?export=download&id=1L7ZFYFXCzc01DOKnbaDd5YV5GZgo_htn"" width=""750px"">
+<hr/>
+[**Tolgahan Çepel**](https://www.kaggle.com/tolgahancepel)
+<hr/>
+
+<font color=green>
+* 1. [Importing Libraries and Reading the Dataset](#1)
+* 2. [Building the Network](#2)
+    * [Configuring the Model for Training](#3)
+    * [Data Augmentation](#4)
+    * [Displaying Some Augmented Images](#5)
+    * [Fitting the model](#6)
+    * [Saving the model](#7)
+    * [Displaying curves of loss and accuracy during training](#8)
+* 3. [Conclusion](#9)
+<hr/>",2ba4272a,0
+7,599548cea78ff7,7b084d0a,"# DATA UNDESRTANDING
+
+#### Churn veri seti için ML algoritmaları uyguladım, veriyi anlama kısmına ise bu notebookta yer verdim.
+
+#### Churn ML Algoritmaları: https://www.kaggle.com/nguncedasci/churn-dataset-ml-algorithms-accuracy-0-9",ce055a99,0
+8,b22dbd9793ae30,497a7055,"###  Following sentdex's video 3, 4 and 5 of [Data Analysis w/ Python](https://www.youtube.com/playlist?list=PLQVvvaa0QuDfSfqQuee6K8opKtZsh7sA9)",d32ccf55,0
+9,59979614f8c7e8,7ad2849e,"<h1 style=""color:red;"">Upvote If This Kernel Helps You</h1>",8f3d7f06,0
+12,b22c3a532f6dfb,3a87dcd1,"# Convolutional Neural Networks (CNN)
+<br>Content: 
+* [Loading the Data Set](#1)
+* [Overview Data Set](#2)
+* [Data Preprocessing](#3)
+    * [Normalization](#4)
+    * [Reshape](#5)
+    * [Label Encoding](#6)
+    * [Train Test Split](#7)
+* [Convolutional Neural Network](#8)
+    * [What is Convolution Operation?](#9)
+    * [Same Padding](#10)
+    * [Max Pooling](#11)
+    * [Flattening](#12)
+    * [Full Connection](#13)
+* [Implementing with Keras](#14)
+    * [Create Model](#15)
+    * [Define Optimizer](#16)
+    * [Compile Model](#17)
+    * [Epochs and Batch Size](#18)
+    * [Data Augmentation](#19)
+    * [Fit the Model](#20)
+    * [Evaluate the Model](#21)
+",dc62ddd3,0
+13,b22c367289ddb8,6ebf0f96,"**Some of the key resources that helped me out in formulating this:**
+- https://www.kaggle.com/ejmejm/commonlit-eda-video-tutorial?scriptVersionId=64939768 : There is a beautiful explanation via youtube video as well. 
+- https://www.kaggle.com/ruchi798/commonlit-readability-prize-eda-baseline",3682132e,0
+14,5997e7cf75d1a6,ffcd61cc,"<h1>Table of Contents<span class=""tocSkip""></span></h1>
+<div class=""toc""><ul class=""toc-item""><li><span><a href=""#UCI-Bank-Marketing-Dataset.-Case-study.-Part-1-(EDA)"" data-toc-modified-id=""UCI-Bank-Marketing-Dataset.-Case-study.-Part-1-(EDA)-1""><span class=""toc-item-num"">1&nbsp;&nbsp;</span>UCI Bank Marketing Dataset. Case study. Part 1 (EDA)</a></span></li><li><span><a href=""#Attribute-Information"" data-toc-modified-id=""Attribute-Information-2""><span class=""toc-item-num"">2&nbsp;&nbsp;</span>Attribute Information</a></span><ul class=""toc-item""><li><span><a href=""#Input-variables"" data-toc-modified-id=""Input-variables-2.1""><span class=""toc-item-num"">2.1&nbsp;&nbsp;</span>Input variables</a></span><ul class=""toc-item""><li><span><a href=""#Bank-client-data"" data-toc-modified-id=""Bank-client-data-2.1.1""><span class=""toc-item-num"">2.1.1&nbsp;&nbsp;</span>Bank client data</a></span></li><li><span><a href=""#Related-with-the-last-contact-of-the-current-campaign"" data-toc-modified-id=""Related-with-the-last-contact-of-the-current-campaign-2.1.2""><span class=""toc-item-num"">2.1.2&nbsp;&nbsp;</span>Related with the last contact of the current campaign</a></span></li><li><span><a href=""#Other-attributes"" data-toc-modified-id=""Other-attributes-2.1.3""><span class=""toc-item-num"">2.1.3&nbsp;&nbsp;</span>Other attributes</a></span></li><li><span><a href=""#Social-and-economic-context-attributes"" data-toc-modified-id=""Social-and-economic-context-attributes-2.1.4""><span class=""toc-item-num"">2.1.4&nbsp;&nbsp;</span>Social and economic context attributes</a></span></li></ul></li><li><span><a href=""#Output-variable-(desired-target)"" data-toc-modified-id=""Output-variable-(desired-target)-2.2""><span class=""toc-item-num"">2.2&nbsp;&nbsp;</span>Output variable (desired target)</a></span></li></ul></li><li><span><a href=""#Basic-info-of-the-dataset"" data-toc-modified-id=""Basic-info-of-the-dataset-3""><span class=""toc-item-num"">3&nbsp;&nbsp;</span>Basic info of the dataset</a></span></li><li><span><a href=""#Exploratory-Data-Analysis-(EDA)"" data-toc-modified-id=""Exploratory-Data-Analysis-(EDA)-4""><span class=""toc-item-num"">4&nbsp;&nbsp;</span>Exploratory Data Analysis (EDA)</a></span><ul class=""toc-item""><li><span><a href=""#Distribution-of-the-Target"" data-toc-modified-id=""Distribution-of-the-Target-4.1""><span class=""toc-item-num"">4.1&nbsp;&nbsp;</span>Distribution of the Target</a></span></li><li><span><a href=""#Correlation-matrix"" data-toc-modified-id=""Correlation-matrix-4.2""><span class=""toc-item-num"">4.2&nbsp;&nbsp;</span>Correlation matrix</a></span></li><li><span><a href=""#Feature-Analysis"" data-toc-modified-id=""Feature-Analysis-4.3""><span class=""toc-item-num"">4.3&nbsp;&nbsp;</span>Feature Analysis</a></span><ul class=""toc-item""><li><span><a href=""#Feature:-month-(categorical)"" data-toc-modified-id=""Feature:-month-(categorical)-4.3.1""><span class=""toc-item-num"">4.3.1&nbsp;&nbsp;</span>Feature: month (categorical)</a></span></li><li><span><a href=""#Bank-client-data"" data-toc-modified-id=""Bank-client-data-4.3.2""><span class=""toc-item-num"">4.3.2&nbsp;&nbsp;</span>Bank client data</a></span><ul class=""toc-item""><li><span><a href=""#Feature:-age-(numeric)"" data-toc-modified-id=""Feature:-age-(numeric)-4.3.2.1""><span class=""toc-item-num"">4.3.2.1&nbsp;&nbsp;</span>Feature: age (numeric)</a></span></li><li><span><a href=""#Feature:-job-(categorical)"" data-toc-modified-id=""Feature:-job-(categorical)-4.3.2.2""><span class=""toc-item-num"">4.3.2.2&nbsp;&nbsp;</span>Feature: job (categorical)</a></span></li><li><span><a href=""#Feature:-marital-(categorical)"" data-toc-modified-id=""Feature:-marital-(categorical)-4.3.2.3""><span class=""toc-item-num"">4.3.2.3&nbsp;&nbsp;</span>Feature: marital (categorical)</a></span></li><li><span><a href=""#Feature:-education-(categorical)"" data-toc-modified-id=""Feature:-education-(categorical)-4.3.2.4""><span class=""toc-item-num"">4.3.2.4&nbsp;&nbsp;</span>Feature: education (categorical)</a></span></li><li><span><a href=""#Feature:-default-(categorical)"" data-toc-modified-id=""Feature:-default-(categorical)-4.3.2.5""><span class=""toc-item-num"">4.3.2.5&nbsp;&nbsp;</span>Feature: default (categorical)</a></span></li><li><span><a href=""#Feature:-housing-(categorical)"" data-toc-modified-id=""Feature:-housing-(categorical)-4.3.2.6""><span class=""toc-item-num"">4.3.2.6&nbsp;&nbsp;</span>Feature: housing (categorical)</a></span></li><li><span><a href=""#Feature:-loan-(categorical)"" data-toc-modified-id=""Feature:-loan-(categorical)-4.3.2.7""><span class=""toc-item-num"">4.3.2.7&nbsp;&nbsp;</span>Feature: loan (categorical)</a></span></li></ul></li><li><span><a href=""#Related-with-the-last-contact-of-the-current-campaign"" data-toc-modified-id=""Related-with-the-last-contact-of-the-current-campaign-4.3.3""><span class=""toc-item-num"">4.3.3&nbsp;&nbsp;</span>Related with the last contact of the current campaign</a></span><ul class=""toc-item""><li><span><a href=""#Feature:-contact-(categorical)"" data-toc-modified-id=""Feature:-contact-(categorical)-4.3.3.1""><span class=""toc-item-num"">4.3.3.1&nbsp;&nbsp;</span>Feature: contact (categorical)</a></span></li><li><span><a href=""#Feature:-month-(categorical)"" data-toc-modified-id=""Feature:-month-(categorical)-4.3.3.2""><span class=""toc-item-num"">4.3.3.2&nbsp;&nbsp;</span>Feature: month (categorical)</a></span></li><li><span><a href=""#Feature:-day_of_week-(categorical)"" data-toc-modified-id=""Feature:-day_of_week-(categorical)-4.3.3.3""><span class=""toc-item-num"">4.3.3.3&nbsp;&nbsp;</span>Feature: day_of_week (categorical)</a></span></li><li><span><a href=""#Feature:-duration-(numeric)"" data-toc-modified-id=""Feature:-duration-(numeric)-4.3.3.4""><span class=""toc-item-num"">4.3.3.4&nbsp;&nbsp;</span>Feature: duration (numeric)</a></span></li></ul></li><li><span><a href=""#Other-attributes"" data-toc-modified-id=""Other-attributes-4.3.4""><span class=""toc-item-num"">4.3.4&nbsp;&nbsp;</span>Other attributes</a></span><ul class=""toc-item""><li><span><a href=""#Feature:-campaign-(numeric)"" data-toc-modified-id=""Feature:-campaign-(numeric)-4.3.4.1""><span class=""toc-item-num"">4.3.4.1&nbsp;&nbsp;</span>Feature: campaign (numeric)</a></span></li><li><span><a href=""#Feature:-pdays-(numeric)"" data-toc-modified-id=""Feature:-pdays-(numeric)-4.3.4.2""><span class=""toc-item-num"">4.3.4.2&nbsp;&nbsp;</span>Feature: pdays (numeric)</a></span></li><li><span><a href=""#Feature:-previous-(numeric)"" data-toc-modified-id=""Feature:-previous-(numeric)-4.3.4.3""><span class=""toc-item-num"">4.3.4.3&nbsp;&nbsp;</span>Feature: previous (numeric)</a></span></li><li><span><a href=""#Feature:-poutcome-(categorical)"" data-toc-modified-id=""Feature:-poutcome-(categorical)-4.3.4.4""><span class=""toc-item-num"">4.3.4.4&nbsp;&nbsp;</span>Feature: poutcome (categorical)</a></span></li></ul></li><li><span><a href=""#Social-and-economic-context-attributes"" data-toc-modified-id=""Social-and-economic-context-attributes-4.3.5""><span class=""toc-item-num"">4.3.5&nbsp;&nbsp;</span>Social and economic context attributes</a></span><ul class=""toc-item""><li><span><a href=""#Feature:-emp.var.rate-(numeric)"" data-toc-modified-id=""Feature:-emp.var.rate-(numeric)-4.3.5.1""><span class=""toc-item-num"">4.3.5.1&nbsp;&nbsp;</span>Feature: emp.var.rate (numeric)</a></span></li><li><span><a href=""#Feature:-cons.price.idx-(numeric)"" data-toc-modified-id=""Feature:-cons.price.idx-(numeric)-4.3.5.2""><span class=""toc-item-num"">4.3.5.2&nbsp;&nbsp;</span>Feature: cons.price.idx (numeric)</a></span></li><li><span><a href=""#Feature:-cons.conf.idx-(numeric)"" data-toc-modified-id=""Feature:-cons.conf.idx-(numeric)-4.3.5.3""><span class=""toc-item-num"">4.3.5.3&nbsp;&nbsp;</span>Feature: cons.conf.idx (numeric)</a></span></li><li><span><a href=""#Feature:-euribor3m-(numeric)"" data-toc-modified-id=""Feature:-euribor3m-(numeric)-4.3.5.4""><span class=""toc-item-num"">4.3.5.4&nbsp;&nbsp;</span>Feature: euribor3m (numeric)</a></span></li><li><span><a href=""#Feature:-nr.employed-(numeric)"" data-toc-modified-id=""Feature:-nr.employed-(numeric)-4.3.5.5""><span class=""toc-item-num"">4.3.5.5&nbsp;&nbsp;</span>Feature: nr.employed (numeric)</a></span></li></ul></li><li><span><a href=""#Output-variable-(target)"" data-toc-modified-id=""Output-variable-(target)-4.3.6""><span class=""toc-item-num"">4.3.6&nbsp;&nbsp;</span>Output variable (target)</a></span></li></ul></li></ul></li><li><span><a href=""#Summary"" data-toc-modified-id=""Summary-5""><span class=""toc-item-num"">5&nbsp;&nbsp;</span>Summary</a></span></li></ul></div>",6d1eb35c,0
+16,59939d35cf5661,f99a1efe,"# Houses Prices: Adavanced Regression Techniques
+
+Jonathan Lices Martín",24696,0
+17,b22eed3c74b3a4,e8ad738f,"# Awesome Data Science and Machine Learning Cheatsheets and Iris Species Classification
+
+    This kernel notebook has Iris Species Classification and the curated lists of Awesome Data Science and Machine Learning Cheatsheets to rule the world.
+
+> #### **Credits**: Thanks to **TensorFlow Team**, **Favio André Vázquez** and other contributers for such wonderful work!
+
+### Here are some of *my kernel notebooks* for **Machine Learning and Data Science** as follows, ***Upvote*** them if you *like* them
+
+> * [Data Science with R - Awesome Tutorials](https://www.kaggle.com/arunkumarramanan/data-science-with-r-awesome-tutorials)
+> * [Awesome ML Frameworks and MNIST Classification](https://www.kaggle.com/arunkumarramanan/awesome-machine-learning-ml-frameworks)
+> * [Awesome Data Science for Beginners with Titanic Exploration](https://kaggle.com/arunkumarramanan/awesome-data-science-for-beginners)
+> * [Tensorflow Tutorial and House Price Prediction](https://www.kaggle.com/arunkumarramanan/tensorflow-tutorial-and-examples)
+> * [Practical Machine Learning with PyTorch](https://www.kaggle.com/arunkumarramanan/practical-machine-learning-with-pytorch)
+> * [Awesome Deep Learning Basics and Resources](https://www.kaggle.com/arunkumarramanan/awesome-deep-learning-resources)
+> * [Awesome Computer Vision Resources (TBU)](https://www.kaggle.com/arunkumarramanan/awesome-computer-vision-resources-to-be-updated)
+> * [Data Scientist's Toolkits - Awesome Data Science Resources](https://www.kaggle.com/arunkumarramanan/data-scientist-s-toolkits-awesome-ds-resources)
+> * [Data Science with Python - Awesome Tutorials](https://www.kaggle.com/arunkumarramanan/data-science-with-python-awesome-tutorials)
+> * [Machine Learning and Deep Learning - Awesome Tutorials](https://www.kaggle.com/arunkumarramanan/awesome-deep-learning-ml-tutorials)
+> * [Machine Learning Engineer's Toolkit with Roadmap](https://www.kaggle.com/arunkumarramanan/machine-learning-engineer-s-toolkit-with-roadmap) 
+> * [Awesome TensorFlow and PyTorch Resources](https://www.kaggle.com/arunkumarramanan/awesome-tensorflow-and-pytorch-resources)
+> * [Hands-on ML with scikit-learn and TensorFlow](https://www.kaggle.com/arunkumarramanan/hands-on-ml-with-scikit-learn-and-tensorflow)
+> * [Awesome Data Science IPython Notebooks](https://www.kaggle.com/arunkumarramanan/awesome-data-science-ipython-notebooks)
+> * [Data Science and Machine Learning Cheetcheets](https://www.kaggle.com/arunkumarramanan/data-science-and-machine-learning-cheatsheets)
+",0851bcaf,0
+18,b22f4dca7887ad,d736e41a,"
+## <span style='background :pink' > Heart attack prediction and analysis</span>
+",e640171b,0
+19,b2317b1d1dd3bb,3735296d,"# Introdução
+
+Esse caderno faz parte de um conjunto de análises sobre o <a href=""http://portal.inep.gov.br/enade"">ENADE</a>, que é uma prova padronizada aplicada a formandos de ensino superior a fim de avaliar quão bem eles aprenderam o conteúdo do curso.
+
+## Links:
+
+Para acessar os outros conteúdos que tenho trabalhado:
+
+- <a href='https://www.kaggle.com/joaoavf/enade-01-juntando-arquivos'>1 - Juntando arquivos</a> [CADERNO ATUAL]
+- <a href='https://www.kaggle.com/joaoavf/enade-02-tratando-outliers'>2 - Tratando outliers</a>
+- <a href='https://www.kaggle.com/joaoavf/enade-03-explorando-dados'>3 - Explorando Dados</a> 
+- <u>Próximos cadernos ainda em progresso</u>
+
+## Outros recursos
+
+Caso tenha interesse em aprender as ferramentas que estão sendo utilizadas aqui, segue um guia para iniciantes: 
+
+<a href='https://www.kaggle.com/joaoavf/introducao-a-analise-de-dados-python-e-pandas'>Introdução a Análise de Dados usando Python e pandas</a>
+
+# Por que combinar o ENADE 2016, 2017 e 2018?
+Uma vez que o ENADE para um mesmo curso normalmente é feito de 3 em 3 anos, combinando 2016, 2017 e 2018 teremos dados sobre todos os cursos.
+
+
+*O ENADE 2016 não foi realizado com todos os alunos (cerca de 50% da população dos anos de 2017 e 2018). Uma vez que o ENADE 2019 for disponibilizado, vale a pena trocar o ano de 2016 pelo ano de 2019.*",2a40857a,0
+20,599184e9adddf2,aaf0ddfb,"<h1 style=""background-color:black
+;font-family:newtimeroman;font-size:275%;text-align:center;border-radius: 100px 100px; color:#03e8fc"">  Walmart Store Sales Forecasting </h1><a id=0></a>",40726795,0
+21,5991c58e97b5cd,095cca07,## Separation of data,4b63359e,0
+22,b23155d63c3b78,68feae8f,# Stacking을 이용한 Second-Level Learning Model,d9382fab,0
+23,5991d147e16f03,74b1dd16,# **COVID-19-Novel-CoronaVirus**,4954502c,0
+24,b2310b9d101185,ebf7cff5,# Find speech segments,020ebdd9,0
+27,b2304bc6a4c1b4,92e4a372,"# Итоговый проект по курсу 
+# ""Библиотеки Python для Data Science: продолжение"" <a class='anchor' id='begin'>
+
+Тема: ""Построение модели прогнозирования невыполнения долговых обязательств по кредиту""<br>
+Студент: Александр Тарасов ([kaggle](https://www.kaggle.com/sashatarassov), [telegram](https://t.me/Escander81))<br>
+Преподаватель: Светлана Медведева<br>",4cac01b6,0
+30,5992e21d1b2714,75d2d419,"<div>
+    <img src=""https://storage.googleapis.com/kaggle-datasets-images/88836/204662/70c8793a1e85f544086a1d4b19951b51/dataset-cover.jpg""/>
+</div>",ae98cc3b,0
+33,59934826aa372d,f1d096c8,"<a class=""anchor"" id=""0""></a>
+# [AI-ML-DS : Training for beginners](https://www.kaggle.com/vbmokin/ai-ml-ds-training-for-beginners-in-kaggle). Level 2 (simple). 2021
+## Kaggle Contributor [@artur1999](https://www.kaggle.com/artur1999)
+",03c31575,0
+34,b22c32c14d7c45,b563ed67,"INTRODUCTION
+
+Hey! this is my first public kernel so I am trying to upload data and see how it can be processed!",853a3971,0
+36,0464d0393953dd,c6cda417,"# Introduction
+
+An international e-commerce company based wants to discover key insights from their customer database. They want to use some of the most advanced machine learning techniques to study their customers. The company sells electronic products.
+
+<font color=""blue"">
+Content:
+
+1. [Load and Check Data](#1)
+1. [Dataset Description](#2)
+    * [Variable Description](#3)
+    * [Univeraite Variable Analysis](#4)
+        * [Categorical Variable Analysis](#5)
+        * [Numerical Variable Analysis](#6)
+   
+1. [Basic Data Analysis](#7)
+1. [Outlier Detection](#8)
+    * [Z_Score](#9)
+    * [Dropping Outliers](#10)
+    * [Winsorization](#11)
+1. [Feature Engineering](#12)
+1. [Prediction](#13)
+1. [Hyperparamater tuning - GridSearchCV](#14)
+1. [Conclusion](#15)",178ffa75,0
+38,0944821370ebab,0f17bcf6,"# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only ""../input/"" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using ""Save & Run All"" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session",e3ec7e64,0
+39,599bc73e274256,9eb6a9dd,"# Credit Card Customer Churn EDA & Prediction
+
+![image.png](attachment:image.png)",ce857956,0
+40,599ce2c3ce4b9e,209296fb,"Started on 8 July 2019
+
+**References:**
+1. https://www.kaggle.com/cdeotte/supervised-generative-dog-net
+2. https://www.kaggle.com/rhodiumbeng/crop-dog-images",c975e13a,0
+41,04654f713f6eb6,a1bc5692,"# Objective
+
+* Try different features and see if our oof align with public leaderboard
+* You can find my exploratory data analysis in this link: https://www.kaggle.com/ragnar123/exploratory-data-analysis-and-model-baseline",e586773b,0
+43,599e46cc3d34a9,1d409318,# BUILDING MY DREAM 11 🏏⚾,b1d64564,0
+44,599b157b980c4b,a982db54,# CryptoCurrency : DogeCoin Prediction in USD (Beginners Level),9.54E+81,0
+45,599efad73fc640,6b6adc9a,# Data Pre-Processing,177e7868,0
+46,b225789eccb732,841a2e3b,"![images.png](attachment:images.png)
+
+# COVID-19: current situation
+
+- EDA including **the recent updates, recovering country analysis & sigmoid fitting convergence date estimation**.
+- `plotly` visualization is heavy used",eb619701,0
+47,599f3c971ee570,f150c3c0,![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiY8X0vLwRCijoI9nw_K6sTLC190PnSuA4XA&usqp=CAU),d783b6c6,0
+48,599fa957d885e2,f0c1c19e,"# **COVID-19: Face Mask Detector**
+
+Face Mask Detection system built with OpenCV, TensorFlow using Deep Learning and Computer Vision to detect face masks in real-time video streams.
+
+This notebook is created by [Ritik Bompilwar](http://ritikbompilwar.in/) as part of cAInvas Scholar Program by [AITS](https://cainvas.ai-tech.systems/dashboard/)
+
+Dataset Used [Face Mask Detection Data](https://www.kaggle.com/aneerbanchakraborty/face-mask-detection-data) from Kaggle.
+
+Refrence : [COVID-19: Face Mask Detector with OpenCV, Keras/TensorFlow, and Deep Learning](https://www.pyimagesearch.com/2020/05/04/covid-19-face-mask-detector-with-opencv-keras-tensorflow-and-deep-learning/)
+
+
+",806db8fb,0
+50,b224eab66fe797,0228f61b,"# Approach
+",d10d4426,0
+51,0944639d4153c4,78283905,"# Detecting steels with texture, a little more for sure
+
+This notebook is [fast.ai](https://www.fast.ai) version of [Detector steels with texture by @ateplyuk](https://www.kaggle.com/ateplyuk/detector-steels-with-texture).
+First of all, thanks to @ateplyuk!
+
+By using [fast.ai](https://www.fast.ai) library, we might be doing better finding textures:
+![texture](https://github.com/ushur/Severstal-Steel-Defect-Detection/blob/master/Texture.jpg?raw=true)",99587d6f,0
+53,b226e306bc58be,b9c98b9b,"# Ensemble of Trees with HyperOpt tuning
+
+I built this to try develop and try out some utility functions for hyperparameter tuning of some sklearn classifiers. Uses LGBM, Catboost, XGBoost, and Random Forest classifiers to build an ensemble, and stacks those with Logistic Regression. All five have their hyper-parameters tuned with Hyperopt. Besides stacking, also averaging and majority vote ensembles are applied.
+
+Also features some helper functions to see what are the biggest misclassifications the model makes. All functions also found on my [Github](https://github.com/mukatee/ml-experiments/tree/master/utils).",4f48f1b2,0
+54,b2278ffe00210a,0fc1abba,"**Assignment 6 - Kernels in Kaggle<br>
+Shailesh Sridhar - 01FB16ECS349<br>
+Shashank Prabhakar - 01FB16ECS356<br>
+Shrey Tiwari - 01FB16ECS368**<br>",fad584fc,0
+55,599ad810e50d4a,ca3bd3cb,"# Data Preprocessing
+* Data preprocessing is transforming raw data into an understandable format. Real-world data is often incomplete, inconsistent, and/or lacking in certain behaviors or trends, and is likely to contain many errors. Data preprocessing is a proven method of resolving such issues.
+* __Data cleansing or data cleaning__ is the process of detecting and correcting (or removing) corrupt or inaccurate records from a record set, table, or database and refers to identifying incomplete, incorrect, inaccurate or irrelevant parts of the data and then replacing, modifying, or deleting the dirty or coarse data.",84573d8c,0
+56,b22b9edd20fd62,156fc651,"# **FastOracleGAN** - Multiple Input Version
+--------------
+This study explores how to make **lighter, faster [OracleGAN](https://www.kaggle.com/lapl04/oraclegan-pix2pix-for-time-series-image)**.
+
+MobileNet v2 is adopted to Discriminator.
+Also, part of Generator's convolution layers are replaced with Depthwise Separable Convolution.
+Convolution is added to Generator's skips.",d180049a,0
+59,5999ea70c7fcfd,ada1673e,"<div>
+    <img src=""https://storage.googleapis.com/kaggle-datasets-images/408863/783233/1bb8f2dc05690a85fc206715e96539e7/dataset-cover.jpg""/>
+</div>",881d9491,0
+61,b22ad5f8c1d7d8,3f70d669,"The features for this notebook have been taken from here: https://www.kaggle.com/jmargni/tps-apr-2021-lightgbm-cv
+
+",6272bbde,0
+62,599a7ddbedb894,01b43551,"# About this notebook  
+- PyTorch resnext50_32x4d starter code  
+- StratifiedKFold 5 folds  
+
+If this notebook is helpful, feel free to upvote :)",346be5ca,0
+64,b22a6ffc20845e,d725a8b6,"This kernel uses [Fridex's hexsticker package](https://github.com/fridex/hexsticker) to create a hex sticker from a .png of the Kaggle logo. 
+
+You can use this code to create your own sticker by:
+
+1. Forking this notebook
+2. Uploading a dataset with your own .png files
+3. Start a new kernel on your dataset & replace the ""../input/k-logo-white-square.png"" with the path to the picture you want to lose
+
+You'll probably want to adjust the padding size (depending on the size ratio of your photo), the border size and the border color (which is Kaggle blue here). 
+
+Happy stickering! :)",4bc3c973,0
+65,b229fcbb770c49,474ad3e7,"# Load data faster
+
+While doing EDA we load data mulitple time or if we are using doing EDA on our machine its faster to pickle the data which can improve data load time drastically ",24779b68,0
+66,599a936f251973,47c9fa7d,"<a id=""top""></a> 
+### <center><font color='red'>SUICIDE HOTLINES - INTERNATIONAL</font></center><center>www.opencounseling.com/suicide-hotlines</center>
+
+# <center>Suicides - Data Visualization and World Maps</center>
+
+This notebook contains overview of datasets, data visualizations, correlations and maps that impacts the suicide rates in various countries.  Following datasets are utilized:
+
+*  **Suicide Rates Overview 1985 to 2016** dataset compares socio-economic information with suicide rates by year and country and contains suicide data of 101 countries spanning 32 years. 
+*  **World capitals GPS** contains countries, continents and latitude/longitude information and is combined with the above dataset to look at **suicides per continents** and to create a *Folium World* map.
+*  **World Countries** is a JSON file with country geographical shape information and is used to create the *Choropleth World* map.
+<br>
+
+### Table of Content
+1.  [Data Preparation](#prep)<br>
+1.1  [Data Collection](#prep_coll)<br>
+1.2  [Data Cleaning](#prep_clean)<br>
+1.3  [Final Check](#prep_check)<br>
+1.4  [Data Attributes  ](#prep_attr)<br>
+1.5  [Data Overview  ](#prep_limit)<br>
+
+
+2.  [Data Visualization (EDA)](#eda)<br>
+2.1  [Suicide Rates per Country](#eda_country)<br>
+2.2  [Suicide Rates per Continent](#eda_cont)<br>
+2.3  [Suicide Trends and Population](#eda_pop)<br>
+2.4  [Suicide Trends and Age Group](#eda_age)<br>
+2.5  [Suicide Trends and Human Development Index (HDI)](#eda_hdi)<br>
+2.6  [Suicide Trends and GDP](#eda_gdp)<br>
+
+
+3.  [Correlations](#corr)<br>
+3.1  [Encoding and Normalization](#corr_encode)<br>
+3.2  [Overall Correlation](#corr_over)<br>
+3.3  [Correlation - Male & Female](#corr_sex)<br>
+
+
+4.  [World Maps](#maps)<br>
+4.1  [Folium World Map](#maps_folium)<br>
+4.2  [Choropleth World Map](#maps_chor)<br>
+4.3  [Choropleth World Map - Animated](#maps_chorANI)<br>   
+
+<br>
+
+**LIMMITATION:**  Dataset is an excellent resource for data visualizations and creating maps, but contains only around half countries in the world, so by far is not complete.
+
+**Please upvote if you found this helpful :-)**",0ae8492c,0
+68,599a93a1821e6c,47d30256,"# Exploring Professional Overwatch Players' Mouse and In-Game Sensitivity Data: A Role-Based Approach
+
+## See [pro-overwatch-player-settings dataset](https://www.kaggle.com/yakiya51/pro-overwatch-player-settings) description for context.",5a0a59df,0
+69,b22962a7f167cc,5f0d812c,"<img src=""https://pbs.twimg.com/media/FBleFqjVEAEZa0t?format=jpg&name=large"" width=400%>
+",0ea9a31e,0
+70,b2289470a040eb,6e35cc99,# Problem Statment,5f5d9b88,0
+71,59989cbc0fb82a,bb54b314,"https://www.machinehack.com/course/predict-the-flight-ticket-price-hackathon/
+
+## Predict The Flight Ticket Price Hackathon
+
+Flight ticket prices can be something hard to guess, today we might see a price, check out the price of the same flight tomorrow, it will be a different story. We might have often heard travellers saying that flight ticket prices are so unpredictable. Huh! Here we take on the challenge! As data scientists, we are gonna prove that given the right data anything can be predicted. Here you will be provided with prices of flight tickets for various airlines between the months of March and June of 2019 and between various cities.
+
+##### Size of training set: 10683 records
+
+##### Size of test set: 2671 records
+
+#### FEATURES: 
+- Airline: The name of the airline.
+
+- Date_of_Journey: The date of the journey
+
+- Source: The source from which the service begins.
+
+- Destination: The destination where the service ends.
+
+- Route: The route taken by the flight to reach the destination.
+
+- Dep_Time: The time when the journey starts from the source.
+
+- Arrival_Time: Time of arrival at the destination.
+
+- Duration: Total duration of the flight.
+
+- Total_Stops: Total stops between the source and destination.
+
+- Additional_Info: Additional information about the flight
+
+- Price: The price of the ticket",45f2c8d7,0
+72,5991601fe64b1e,163fe4a2,">* Based on https://www.kaggle.com/lpachuong/statstack
+>* Thanks to <br>
+https://www.kaggle.com/jazivxt/safe-box<br>
+https://www.kaggle.com/artgor/eda-and-models<br>
+https://www.kaggle.com/stocks/under-sample-with-multiple-runs<br>
+https://www.kaggle.com/artkulak/ieee-fraud-simple-baseline-0-9383-lb",7cab7e92,0
+73,b2318a3192f7ea,557e00e8,"**[Pandas Course Home Page](https://www.kaggle.com/learn/pandas)**
+
+---
+",612efa48,0
+75,b237881ddde78e,b92b011a,"# The Status of ML in Developing Economies: the Case of Africa
+***
+*    [Angeliki Varela](https://www.linkedin.com/in/angeliki-varela-8a365b37) 
+    *    email: avarela@chicagobooth.edu
+    *    Kaggle: `ang3l1k1`
+*    [Orest Xherija](https://www.linkedin.com/orestxherija) 
+    *    email: xherija.orest@gmail.com 
+    *    kaggle: `orestxherija`",c88b9c2f,0
+76,5986077c8a5ab5,bfe8b1c0,"<center> 
+<strong>LightGBM+RFECV+BayesSearchCV</strong><br />
+<img src=""https://panampost.com/wp-content/uploads/pobreza-costa-rica-560x276.jpg"">
+Helping the Inter-American Development Bank with income qualification of the world's poorest families.
+
+</center>",7bb513f0,0
+77,598611f591f655,71398406,"This is a very simple tutorial intended for the beginners to understand and implement Simple Linear Regression from the scratch. 
+
+
+
+<font color='blue'> Simple Linear Regression </font> is a great first machine learning algorithm to implement as it requires you to estimate properties from your training dataset, but is simple enough for beginners to understand. Linear regression is a prediction method that is more than 200 years old. In this tutorial, you will discover how to implement the simple linear regression algorithm from scratch in Python.
+
+After completing this tutorial you will know:<br>
+&#9632; How to estimate statistical quantities from training data.<br>
+&#9632; How to estimate linear regression coefficients from data.<br>
+&#9632; How to make predictions using linear regression for new data.<br>
+
+
+Linear regression assumes a **linear or straight line relationship between the input variables (X) and the single output variable (y).** More specifically, that output (y) can be calculated from a linear combination of the input variables (X). When there is a single input variable, the method is referred to as a simple linear regression.
+
+In simple linear regression we can use statistics on the training data to estimate the coefficients required by the model to make predictions on new data.
+
+The line for a simple linear regression model can be written as:
+
+$$ y = b_0 + b_1 * x $$
+where $b_0$ and $b_1$ are the coefficients we must estimate from the training data. Once the coefficients are known, we can use this equation to estimate output values for $y$ given new input examples of $x$. It requires that you calculate statistical properties from the data such as **mean, variance** and **covariance.**
+
+
+If somehow this notebook helps you, please do <font color='red'> UPVOTE </font>",e8fda62c,0
+78,b2377c928fb21a,04b1ab63,"Reading classics [Deep Learning Models](https://github.com/rasbt/deeplearning-models)
+## Basic Examples",72d586ae,0
+80,b237594ab30210,97cfbe36,# Вектора и эмбединги для текстов,eae1947d,0
+82,598713ab4528b5,1fc7f0be,"# Dataviz of Coronavirus Data
+
+nb ""mainland China"" = China excluding Hubei",9807b3d2,0
+83,5987cc4c59ac5f,b19aa3c5,"#                                       *Climate* *Change* *Belief* *Analysis*
+
+
+
+---
+
+
+
+
+
+
+
+
+
+",73fa5f24,0
+84,b237232fd712c9,c219d612,# Stock Market Prediction (Google),cd96eefd,0
+85,b236a2a281022f,920f147b,# KERNEL SHAP,1592f6fc,0
+88,598818f7c93ed1,4b68894d,"## EDA + Light GBM - Tabular Series Apr 2021
+
+In this kernel I will explore and create a predictive model with the T
+
+## Import libs and data",f22a0122,0
+89,5987b4ca05bbe0,ba062a55,"Neural Network with convolution over previous applications and bureau credit reports.
+
+This notebook attempts to predict the defaulters in the competition with a neural network without aggregating data. Appart from the main input with details on the current loan application the details of previous activity will be fed with two auxiliary inputs for both Bureau Credit Reports and Previous Applications.
+
+Preprocessing is limited to standarization, categorical encodings and building the tensors that will feed the neural network. Other than those transformation steps there is no feature engeneering and no aggregation of input tables.
+
+At this point only Current Application, Bureau and Previous Application data is included. This model does not include Installments, Credit Card Balance, Pos Cash Balance or Bureau Balance details.",283c8442,0
+90,5985fcde315906,f7879bda,# Titanic Dataset,09ef36ab,0
+91,b237fb377f2c9b,e179bb9b,"## Introduction
+### This is a follow-up kernel of [my previous LANL EDA kernel](https://www.kaggle.com/tarunpaparaju/lanl-earthquake-prediction-fresh-eda). In this kernel, I explore even more new features and visualize their relationships with the target.
+",b50d93c7,0
+96,b23c2e182ab86f,423eb4f4,# Overview,01cce87d,0
+97,b23c0eeb046643,8944db10,"The table below gives the age (in year) and mileage (in KMs) of four used cars:
+
+|  CAR  | Wartburg | Moskvich | Lada | Trabi |
+| ----- |----------| -------- | ---- | ----- |
+| Age | 5 | 7 | 15 | 28 |
+| Mileage | 30530 | 90000 | 159899 | 270564 |
+
+1. Determine the weights $w_0$ and $w_1$ for a simple linear regression to predict mileage from age.
+2. Use the model from $1$ to predict the mileage for a 15-year old car.
+3. Draw a scatter plot of the data and a plot of the linear regression line.",6bcb84e8,0
+100,5984ee0c5aeb7d,d6e4c2f8,"# INTRODUCTION
+* In this kernel, we will visualise Video Game Sales Dataset by using plotly library.
+    * Plotly library: Plotly's Python graphing library makes interactive, publication-quality graphs online. Examples of how to make line plots, scatter plots, area charts, bar charts, error bars, box plots, histograms, heatmaps, subplots, multiple-axes, polar charts, and bubble charts.
+
+<br>Content:
+1. [Loading Data and Explanation of Features](#1)
+1. [Line Charts](#2)
+1. [Scatter Charts](#3)
+1. [Bar Charts](#4)
+1. [Pie Charts](#5)
+1. [Bubble Charts](#6)
+1. [Histogram](#7)
+1. [Word Cloud](#8)
+1. [Box Plot](#9)
+1. [Scatter Plot Matrix](#10)
+1. [Inset Plots](#11)
+1. [3D Scatter Plot with Colorscaling](#12)
+1. [Multiple Subplots](#13)
+",33192b05,0
+101,0463f7cff9aadb,5581a501,![](https://www.researchgate.net/publication/340223686/figure/fig1/AS:873545626308609@1585280915468/BERT-Original-sentence-how-are-you-doing-today.ppm),5e756455,0
+102,b23a43ebe483cf,8cc0827c,# **STROKE DATASET EDA & PREDICTION PERFORMANCE**,f2ab0a72,0
+103,b23a3c0888679d,edd91f0f,"# Market Customer Personality Analysis
+
+Customer Personality Analysis is a detailed analysis of a company’s ideal customers. It helps a business to better understand its customers and makes it easier for them to modify products according to the specific needs, behaviors and concerns of different types of customers.
+
+Customer personality analysis helps a business to modify its product based on its target customers from different types of customer segments. For example, instead of spending money to market a new product to every customer in the company’s database, a company can analyze which customer segment is most likely to buy the product and then market the product only on that particular segment.
+
+Steps followed in this notebook:
+
+1. Detailed descriptions of customers
+2. CLustering 
+3. Descriptives among clusters
+",b340e755,0
+105,59858e19aeab67,668825f2,**Stanford car dataset Classification**,7621455c,0
+107,b238eb34c816c8,62f344c1,"## Introduction: 
+<font size='3'>Hi Everyone this  note book is a guide and a littel into to my Dataset <b>""Yahoo Finance Apple Inc. (AAPL)""</b>.
+Link - https://www.kaggle.com/achintyatripathi/yahoo-finance-apple-inc-aapl <br>
+This is Historical Data which contains data that tells the onening and closing price of the market. The highest and lowest points and also tells about VWAP .
+It have data of one whole year, which is divided into 3 parts ---<br>
+1.Daily updates 2. Weekly updates, 3. Monthly Updates.
+
+In this notebook I am going to explore the data using AutoViz_class liberary. Which can plot various graphs and reduce the time spend on EDA.<br> 
+<b> However the real part of the is the Time series analysis and prediction.</b>
+I will request everyone to give it a shot and try their hands on this dataset. Thank You.</font> 
+
+### Do UpVote and comment on the Dataset and kernel it will help me grow and improve the quality of my work. Thank You once again. 🙏😃",d7d2b343,0
+109,b23676d006ebd5,5e47c836,"Several days ago, I created one [notebook](https://www.kaggle.com/latong/zoomable-coronavirus-heatmap) showing Coronavirus heatmaps that track global cases in real-time. Now, I would like to try another approach i.e., plot time series data with [Plotly](https://plot.ly/python/animations/) in Python.",f7b0fedf,0
+110,598887bebdd915,c698229c,"# Brandon's first Kaggle attempt
+
+16th June 2020 (Bloomsday)",dabef63c,0
+111,b236611e720354,c5a4bd6a,# A Simple EDA,43d00475,0
+112,b234ca813a46f9,9.18E+37,"**This notebook is an exercise in the [Python](https://www.kaggle.com/learn/python) course.  You can reference the tutorial at [this link](https://www.kaggle.com/colinmorris/booleans-and-conditionals).**
+
+---
+",98df08c6,0
+114,b2334c9f5ee1ae,9e66889f,# House Prices Prediction,b5624af0,0
+117,b232fe60490ad7,8bcf7114,"# TV Shows and Movies listed on Netflix
+This dataset consists of tv shows and movies available on Netflix as of 2019. The dataset is collected from Flixable which is a third-party Netflix search engine.
+
+In 2018, they released an interesting report which shows that the number of TV shows on Netflix has nearly tripled since 2010. The streaming service’s number of movies has decreased by more than 2,000 titles since 2010, while its number of TV shows has nearly tripled. It will be interesting to explore what all other insights can be obtained from the same dataset.
+
+Integrating this dataset with other external datasets such as IMDB ratings, rotten tomatoes can also provide many interesting findings.
+
+Inspiration
+Some of the interesting questions (tasks) which can be performed on this dataset -
+
+* Understanding what content is available in different countries
+* Identifying similar content by matching text-based features
+* Network analysis of Actors / Directors and find interesting insights
+* Is Netflix has increasingly focusing on TV rather than movies in recent years.
+
+![](https://i.gadgets360cdn.com/large/netflix_best_tv_series_1600167552333.jpg)",1c75b8ab,0
+118,598f9b03eae25f,de01fb80,### Import modules,ef29f11f,0
+119,598fd133b2b280,5a9033a4,"Predict Wine Quality : Good or bad 
+
+Dataset Features: 
+type(red or white)
+
+all other have numerical values columns:
+fixed acidity,
+volatile acidity,
+citric acid,
+residual sugar,
+chlorides,
+free sulfur dioxide,
+total sulfur dioxide,
+density,
+pH,
+sulphates,
+alcohol,
+
+To find: quality
+
+
+white wine : 75% data
+red wine : 25%
+
+quality (score between 0 and 10)",fc21509f,0
+120,b232e5141a576d,f59a8960,"# Ethical Hacking Platform - Web Scraping & EDA
+
+
+![image](https://source.unsplash.com/UVMPVIRCF5w/)
+
+In this notebook I will mix two things I like: data-science and hacking challenges.
+
+[CTFlearn.com](CTFlearn.com) is an ethical hacking platform that enables tens of thousands to learn, practice, and compete. It offers user-submitted and community-verified challenges in a wide range of topics.
+
+In this notebook, I will scrap the website information on the hacking challenges and we are going to visualise data about them.
+
+
+# 1. import python modules",20a70efb,0
+122,598ffb73db590a,213c3187,"## CNN Convolutional Neural Network pour Classification des Images
+
+Pour cette deuxième partie du tutorial nous allons Réaliser un Réseau de Convolution mais cette fois-ci sur un jeu de données plus complexe que les chiffres du MNIST. En effet nous allons utiliser un dataset avec des **vrais images pour la reconnaissance Chien / Chat** (toujours en apprentissage supervisé)
+
+Nous Utiliserons encore une fois les libraries de KERAS pour la création du réseau de Convolution.
+
+Tous les principaux éléments qui composent ce réseau ont été abordés en partie 1, s'y reporter en cas de besoin.
+
+### Image Classification Références:
+https://www.kaggle.com/yassineghouzam/introduction-to-cnn-keras-0-997-top-6
+https://blog.keras.io/building-powerful-image-classification-models-using-very-little-data.html
+https://www.kaggle.com/stevenhurwitt/cats-vs-dogs-using-a-keras-convnet
+https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
+https://github.com/shervinea/enzynet/blob/master/scripts/architecture/enzynet_uniform.py
+https://stanford.edu/~shervine/blog/evolution-image-classification-explained
+https://www.analyticsvidhya.com/blog/2016/10/tutorial-optimizing-neural-networks-using-keras-with-image-recognition-case-study/
+http://ruder.io/optimizing-gradient-descent/
+https://medium.com/@vijayabhaskar96/tutorial-on-keras-flow-from-dataframe-1fd4493d237c
+
+dataset : https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/data
+",6766fcd1,0
+123,b2324567c43bdf,bb055546,"<h1 id =""Introduction"" style=""color:#E36149;"">Introduction</h1>
+
+<h2 id =""Problem Statement"" style=""color:#E36149;"">Problem Statement</h2>
+A company's HR department wants to predict whether some employees would leave the company in next 2 years. Your job is to build a predictive model that predicts the prospects of future and present employee.
+Perform EDA and bring out insights A company's HR department wants to predict whether some customers would leave the company in next 2 years. Your job is to build a predictive model that predicts the prospects of future and present employee.
+Perform EDA and bring out insights
+
+<h2 id =""Tasks"" style=""color:#E36149;"">Tasks</h2>
+
+- Perform EDA
+- Build model to predict if Employee leaves
+
+### If you found this notebook insightful or helpful please Upvote, Suggestions are always welcome",bc42c669,0
+124,5990d0fca6ee7f,a0bdc3fd," This'll be my first notebook on Kaggle and I'm open to all the feedback that you guys can provide me .
+ 
+ In this notebook I'll be creating a 2 layer neural network using *sigmoid* as activation in **hidden** layer and *softmax* in *output* layer.
+ 
+ We'll only be getting an accuracy of 91.6% as I'm not using **CNN** and a shallow network and I'll soon implement a **CNN** ** from scratch** in a later version.
+ 
+ I have avoided libraries like **Keras** for creating the network and have written both the forward and back prop.
+ ",a3b00c5e,0
+125,b23205ad0e577d,8038dca5,"**Find ORF(open reading frame),  method 1, ORF length limitation set > 1000bp,  position index set = (1-base)**",474df173,0
+126,59915aa2f1387e,17867851,I trained a logistic regression model and deep neural network using a dataset of cat and dog photos. The results were not what I expected but this process was quite educational for me.Looking forward to your suggestions to improve model performance (accuracy),b9416646,0
+128,599fffbb9306fe,8a30796d,# Problem Statement,5e10067a,0
+129,598e4ff89d2218,11277ea1,"# NASA Star Classification
+
+The goal of this notebook is to complete a basic project including exploration, cleaning, visualization, and classification. The dataset used here is the [Star Type Classification / NASA](https://www.kaggle.com/brsdincer/star-type-classification) dataset on Kaggle. Its target value is the ""Type"" feature, and 6 other features are given for classification.",574a41e5,0
+130,598da364806f56,58e720ec,"# [Video](https://www.youtube.com/watch?v=oNW4jXkc1eY&t=303s) Explaining the approach
+
+This notebook aims at filtering the dataset provided by Kaggle differentiating proper research papers and other documents that would not be useful for a public health specialist/ scientist to explore.
+
+## Steps to realize outlier document removal
+
+ - Extracting duplicate papers by ID , title etc. from metadata
+ - Parametrizing papers with different criteria e.g. words count, references count, authors count, figures count, has abstract, has back matter etc.
+ - These parameters along side the content of the paper are then used to extract outlier documents.",81ecd337,0
+135,b2358a14104ac0,e221b27b,"# Kaggle's M5 forecasting Competition
+
+Author: `Armando Miguel Trejo Marrufo`",f8bfc441,0
+136,598979a632bc3e,89907564,"1. This notebook is an implementation of the Margin Ranking Loss model using TF / Keras.
+2. It uses TPU for training. (GPU for inference)
+3. roberta base.
+
+- reference
+    - https://www.kaggle.com/yasufuminakama/jigsaw4-luke-base-starter-train/notebook
+    - https://www.kaggle.com/quincyqiang/download-huggingface-pretrain-for-kaggle
+    - https://www.kaggle.com/its7171/jigsaw-cv-strategy
+
+inference notebook is [here](https://www.kaggle.com/mst8823/tf-keras-pairwise-toxic-model-tpu-infer)",94ae84dd,0
+137,598a58de5f0ef3,db9dc21b,# Setup Perceptron algorithm,2bee9607,0
+138,b23574f56edef1,5e43e1b2,"<a href=""https://colab.research.google.com/github/solharsh/Data_Understanding_And_Preparation/blob/master/Lending_CLUB_with_NLP.ipynb"" target=""_parent""><img src=""https://colab.research.google.com/assets/colab-badge.svg"" alt=""Open In Colab""/></a>",36d9b32b,0
+139,598a69666b6be1,0d19582b,"## RSNA-MICCAI Brain Tumor Radiogenomic Classification
+<a id = 0></a>
+
+A malignant tumor in the brain is a life-threatening condition. Known as glioblastoma, it's both the most common form of brain cancer in adults and the one with the worst prognosis, with median survival being less than a year. The presence of a specific genetic sequence in the tumor known as MGMT promoter methylation has been shown to be a favorable prognostic factor and a strong predictor of responsiveness to chemotherapy",b36108f8,0
+140,598adeef2959d1,5ddb86d6,"Here I have tried to analyse the dataset of Indian test cricketers and generate some insights from them. I am still a newbie, so please feel free to give any sort of feedbacks.
+:)",144831fc,0
+141,598b6228760590,c208798c,"<div style=""color: #fff7f7;
+           display:fill;
+           border-radius:10px;
+           border-style: solid;
+           border-color:#424949;
+           text-align:center;
+           background-color:#8ac6d1 ;
+           font-size:20px;
+           letter-spacing:0.5px;
+           padding: 0.7em;
+           text-align:left"">  
+<center> <h1>Titanic machine learning 🚩</h1> </center> 
+</div>",be30ab66,0
+143,598cdc55dee500,113b0867,# Exploratory Data Analysis for Beginners (Bike Riding Data Set),bfe5589d,0
+146,598e0b4b4f1f51,7e528de3,"# Báo cáo tiểu luận cuối kì môn Thống kê Ứng dụng
+
+**Người thực hiện: Vũ Quang Hải**
+
+**MSV: 16003499**",2b87ff31,0
+147,b2247a446522a9,692ff9b2,"# Getting Started with Audio Analysis <a class=""anchor"" id=""tea""></a>",a90454d2,0
+148,b2241f38713754,43713249,"# Abstractive Text Summarization
+
+[Post](https://towardsdatascience.com/data-scientists-guide-to-summarization-fc0db952e363) on getting started with `text summarization`, their pros and cons and much more.
+
+**There 3 different training models used here**
+- `build_seq2seq_model_with_just_lstm` - **Seq2Seq model with just LSTMs**. Both `encoder` and `decoder` have just `LSTM`s.
+- `build_seq2seq_model_with_bidirectional_lstm` - **Seq2Seq model with Bidirectional LSTMs**. Both `encoder` and `decoder` have `Bidirectional LSTM`s.
+- `build_hybrid_seq2seq_model` - **Seq2Seq model with hybrid architecture**. Here `encoder` has `Bidirectional LSTM`s while `decoder` has just `LSTM`s.
+
+**To see the full learning and results of all the 3 model go to the end of the notebook in the `Running all the 3 different models` section**
+
+The `model (the trained model)`, `encoder_model (for inference)` and `decoder_model (for inference)` for **Seq2Seq with just LSTMs** are only saved.
+
+![](https://media.giphy.com/media/dsKnRuALlWsZG/giphy.gif)",3436951b,0
+149,59a05f22c4f2d0,1086fa12,"## Introduction
+Greetings from the Kaggle bot! This is an automatically-generated kernel with starter code demonstrating how to read in the data and begin exploring. Click the blue ""Edit Notebook"" or ""Fork Notebook"" button at the top of this kernel to begin editing.",e1d3057f,0
+150,b20ebfe60cbcf3,66d4c9a7,### import packages,c3711cbf,0
+152,b20d4477b7b2f4,b6e243a2,"# Functions and Getting Help
+In this lesson, we'll be talking about functions: calling them, defining them, and looking them up using Python's built-in documentation.
+
+In some languages, functions must be defined to always take a specific number of arguments, each having a particular type. Python functions are allowed much more flexibility. The `print` function is a good example of this:",248d9f2d,0
+153,59b4c4d923c447,1f42f1fe,### Configuração do Ambiente,4156598,0
+154,59b4f5ce765a88,0757ee33,"**Each bin of 4096 samples @ 4Mhz contains enough information to makes satisfactory predictions or obtains features for a metamodel.**
+
+**Dataset**: wavelet transform coefficients of the bin. (mexh & morl works well enough).
+
+**NN Model**: CapsuNet implemented in keras / tensorflow.",97c7c6fa,0
+155,b20c8fb2070656,0c04872f,"Breast cancer is a disease in which cells in the breast grow out of control. There are different kinds of breast cancer. The kind of breast cancer depends on which cells in the breast turn into cancer.
+source information: https://www.cdc.gov/cancer/breast/basic_info/what-is-breast-cancer.htm",9e1e6b3f,0
+156,59b4c04e9cc6fc,a824e590,"Different market forms exist. Monopoly, oligopoly and polypoly. In a monopoly, the company can simply maximize its profit given the demand, since there is no competition. However, as soon as other players enter the market (if this is possible), the companies optimize given a demand that is satisfied not only by one, but now by several companies. Mathematically, it is easy to prove that when the number of players converges to infinity, the individual players can no longer exercise market power. Although there are approaches here to regain market power through marketing measures. 
+
+In this notebook we turn to a particular problem area in economics, the ""Hotelling Oligopoly"". Hotelling (1929) was able to show that companies located on the same street can optimize their profits by moving as close as possible to the competition in terms of location. Why is that? Imagine a street with two stores. Suppose the stores are far apart. Customers can come from anywhere. Each store generates sales. In the following diagram you can see how the situation looks like.
+
+![](https://upload.wikimedia.org/wikipedia/commons/c/cc/Iceseller1.PNG)
+<p style=""font-size : 12px""><em>extract Wikipedia</em></p>
+
+If one of the stores were to move closer to the other, it would intercept more customers coming from the opposite direction before the competition did. Therefore, both move as close as possible to each other, as both want to maximize profits. This is why you often see competing stores right next to each other on the same street.  
+
+![](https://upload.wikimedia.org/wikipedia/commons/3/32/Iceseller4.PNG)
+<p style=""font-size : 12px""><em>extract Wikipedia</em></p>
+
+Hotelling has studied the above behavior for a one-dimensional space. That is, a street along which one can walk. But our world is three-dimensional. We will assume a two-dimensional world for simplification. Stores can be on top of each other, but it is already possible to walk around stores in a two-dimensional space, which is not possible in a one-dimensional space. If you want to get to the back store on a street, you have to pass the front store. In two-dimensional space, however, you could bypass the first store and go directly to the second.
+
+In this study, we will build an agent-based simulation through which we will test whether Hotelling is also plausible for two dimensions.
+
+To do this, we will need to make some assumptions. Why? Well, if we made no assumptions, we would have to try to recreate the world one-to-one. This would not be a simplification and would not allow a controlled situation in which we want to isolate certain effects, e.g. the profit development of stores.",d660de39,0
+157,59b56852b40f98,fc42cbae,"
+# *CUSTOMER SEGMANTATION with K-Means & RFM *         
+
+**Business Problem**
+
+
+Rule-based customer segmentation method with RFM, and  one of
+machine learning model which is  K-Means for customer segmentation is expected to compare.
+
+**Story of Dataset**
+
+The data set called Online Retail II is an online sale based in the UK sales of the store
+from 01/12/2009 to 9/12/2011. Souvenirs are included in the product catalog of this company.
+The vast majority of the company's customers are corporate customers.
+
+**Variables**
+
+* Invoicename: Invoice number (If this code starts with C, it means that order has been canceled.)
+* Stock Code: Product code (Its a unique trick for a product.)
+* Description: Product name
+* InvoiceDate: Invoice date
+* Unit Price: Fetura price
+* Customer ID: Unique customer number
+* Country: Country name",4609385b,0
+158,59b56f48909378,c70a9bf4,"### This notebook mainly focuses on bayesian optimization using Tree Parzen Estimator or TPE for XGBoost model. 'HyperOpt' library is specially designed for that.
+
+This notebook demonstrates following steps: 
+1. Install Hyperopt
+2. Encode categorical data using Ordinal encoding
+3. Setup for optimization:
+    a. Domain space of hyper-parameters
+    b. Objective function
+    c. TPE Algorithm
+    d. History
+4. Find best hyperparameters for XGBoost by running optimization
+5. Train XGBoost with best hyperparameters with KFold cross validation
+6. Predict on test data
+7. Submit",a212b2ea,0
+160,b20ba1101c4e0d,8ef2e042,"# Importing usefull packages
+",1862faf6,0
+161,59b6999dd58d6b,fb1af210,"# Analytics Vidhya - Game of Deep Learning || Computer Vision Hackathon
+ - Competition Link: https://datahack.analyticsvidhya.com/contest/game-of-deep-learning/",019f1b45,0
+162,b20af2b7ea44e2,3e801f2f,## 1. Import Libraries,176e24f2,0
+165,b20ff02acad317,fdd5689f,## Import Dataset,f74ecb23,0
+167,b21034e811f6c7,9635d2d9,"# Inference Kernel Demo - Analyzing Frames Per Video
+
+I've noticed some people pointing out that varying `frames_per_video` does help in improving the public LB score. Indeed it does, so I'll be continuously updating this kernel's viz as I make submissions with different `frames_per_video` each day, while working on my main kernel in the cloud.",eb566af5,0
+168,b213beb34bff2d,dfc5b0c8,# Libraries,54770089,0
+169,59b34aa817141f,f6004171,"For more information on how to se the model and how to generate your own DAE wrights visit this post
+
+https://www.kaggle.com/c/lish-moa/discussion/195642
+
+In this version I am inferring on  groupkfold on the experiment clusters I deduced through clustering here 
+
+https://www.kaggle.com/felipebihaiek/my-2-cents-on-an-accurate-per-experiment-split
+
+You may also be interested in continued training with the non-scored targets. In the next kenel I implement a function that initializes a network from a past training with the non scored targets.
+
+https://www.kaggle.com/felipebihaiek/torch-continued-from-auxiliary-targets-smoothing
+
+",e7ee4fab,0
+170,59b3ad0f1e2974,ffb3ae1d,# Neural Style,6fceb553,0
+171,b212249236640e,e1d8783d,### **Import Necessary Library** ,fd033dab,0
+172,b2120db425de8d,2561f69d,"![homecredit1.jpg](attachment:d674c640-78ef-41e4-854a-dc555ed1cf6c.jpg)
+
+<img src=""https://storage.googleapis.com/kaggle-competitions/kaggle/9120/logos/thumb76_76.png?t=2018-04-02-23-45-04"" align=""left"" width = ""100px""/>
+
+<h1> Home Credit Default Risk</h1>",aebfd89a,0
+174,b211c8c107f56d,bc2b598b,"Hi Kagglers ! 
+
+This is a notebook to test what you can do in a few minutes with h2o's migthy GBM. I also included some basic grid search and early stopping to make the model more competitive. There is no CV in this kernel, I simply used a train/validation split framework. Unfortunately h2o does not allow you to correct for stratification when splitting (to my knowledge), so I rather used sklearn splitting function. 
+
+A neat feature is that you can keep an eye on the scoring history along the training with scoring_history() function on many metrics of interest, not only AUC ROC.
+
+Feel free to comment, fork and upvote, happy kaggling, Cheers!
+",805b90f3,0
+175,59b46e071dbd06,61f19850,### **In this script we will use Random and Grid search techniques to tune the Hyper parameters of the algorithms of ML.**,7ae85384,0
+177,b2116423df2ce4,6accd25c,"As any other Kaggle newbie, I baptized myself into Kagglism by completing 'Housing Prices Competition for Kaggle Learn Users'. My best submission so far got me into top 7% (I know it's nothing impressive) where I played around with XGBoost. However, I was curious how would Google Cloud Platform's AutoML would do with Housing Price data. So, I gave it a try and would like to share my experience.
+The first thing you should keep in mind before using AutoML is that it is not free (apparently not cheap too) and has a lot of limitations. The data cannot be modified after you have uploaded it, therefore you should do all your data cleaning and feature engineering beforehand. Here’s the data processing I went through before uploading my training data:
+",51e7893c,0
+178,b210a3c6b2506a,774cb580,## **Setup**,5722dee3,0
+180,59b4aece612419,efe6d1a4,"## 1. Read The data
+The following libraries will be used to read the dataset:
+* **os:** to recognize operating system folders
+* **pandas:** to read the file with plk extension
+
+An exception handling is added with the intention of running the notebook in kaggle or in local",583cab1c,0
+182,09434189ee99fa,23d26700,"# Story of New York Jobs
+
+![New York Jobs](https://kuwaitjobvacancy.com/wp-content/uploads/2017/07/New-York-JOBS.png)",e3028ee5,0
+185,b20a49a3fe942f,f8866176,"##### Attribute Information:
+##### Bank client data:
+
+Age (numeric)
+
+Job : type of job (categorical: 'admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown')
+
+Marital : marital status (categorical: 'divorced', 'married', 'single', 'unknown' ; note: 'divorced' means divorced or widowed)
+
+Education (categorical: 'basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown')
+
+Default: has credit in default? (categorical: 'no', 'yes', 'unknown')
+
+Housing: has housing loan? (categorical: 'no', 'yes', 'unknown')
+
+Loan: has personal loan? (categorical: 'no', 'yes', 'unknown')
+
+##### Related with the last contact of the current campaign:
+
+Contact: contact communication type (categorical:
+'cellular','telephone')
+
+Month: last contact month of year (categorical: 'jan', 'feb', 'mar',
+…, 'nov', 'dec')
+
+Dayofweek: last contact day of the week (categorical:
+'mon','tue','wed','thu','fri')
+
+Duration: last contact duration, in seconds (numeric). Important
+note: this attribute highly affects the output target (e.g., if
+duration=0 then y='no'). Yet, the duration is not known before a call
+is performed. Also, after the end of the call y is obviously known.
+Thus, this input should only be included for benchmark purposes and
+should be discarded if the intention is to have a realistic
+predictive model.
+
+##### Other attributes:
+
+Campaign: number of contacts performed during this campaign and for
+this client (numeric, includes last contact)
+
+Pdays: number of days that passed by after the client was last
+contacted from a previous campaign (numeric; 999 means client was not
+previously contacted)
+
+Previous: number of contacts performed before this campaign and for
+this client (numeric)
+
+Poutcome: outcome of the previous marketing campaign (categorical:
+'failure','nonexistent','success')
+
+##### Social and economic context attributes
+Emp.var.rate: employment variation rate - quarterly indicator
+(numeric)
+
+Cons.price.idx: consumer price index - monthly indicator (numeric)
+
+Cons.conf.idx: consumer confidence index - monthly indicator
+(numeric)
+
+Euribor3m: euribor 3 month rate - daily indicator (numeric)
+
+Nr.employed: number of employees - quarterly indicator (numeric)
+
+##### Output variable (desired target):
+y - has the client subscribed a term deposit? (binary: 'yes', 'no')",8324545f,0
+186,59b78693f96b9a,12e2f764,"<h1 style="" text-align:center; color:Blue; font-size:40px;""> <u><b>Heart Attack Prediction With 91.8% Accuracy</b></u> </h1>
+
+<p style=""text-align:center; "">
+<img src=""https://www.cardio.com/hs-fs/hubfs/human%20heart%20illustration.jpeg?width=900&name=human%20heart%20illustration.jpeg"" style='width: 400px;'>
+</p>
+
+",393eae3c,0
+187,59bdf03bff9e83,d760fe0d,# New York City Taxi Fare Prediction,dd2f2553,0
+188,b20767e662ce90,8.16E+14,"<a href=""https://colab.research.google.com/github/NeuromatchAcademy/course-content-dl/blob/main/tutorials/W2D2_ModernConvnets/student/W2D2_Tutorial1.ipynb"" target=""_blank""><img alt=""Open In Colab"" src=""https://colab.research.google.com/assets/colab-badge.svg""/></a>",2f633285,0
+189,59be47651c1c2f,6954486e,"# Keep pulling same bandit as long as reward keeps coming!
+
+Cleaned up a bit and added coments / explanations for functions.
+
+Full credit to Lindada's notebook.
+Notebook: https://www.kaggle.com/a763337092/pull-vegas-slot-machines-add-weaken-rate-continue5
+Kaggler: https://www.kaggle.com/a763337092",60e55ea9,0
+190,b2076674f18892,2abb15e9,"## 備忘録_ランダムフォレスト(RandomForestClassifier)
+決定木についてはこちら参照：https://www.kaggle.com/kawakeee/decisiontreeclassifier  
+参考ソース：https://github.com/amueller/introduction_to_ml_with_python/blob/master/02-supervised-learning.ipynb  
+参考書籍：Pythonではじめる機械学習  
+参考記事：https://www.takapy.work/entry/2019/02/24/120138
+
+RandomForestClassifier 参考URL:  
+https://scikit-learn.org/stable/modules/ensemble.html#forests-of-randomized-trees",fcc47bea,0
+194,b20676859cda99,11225b54,## *NOTE: This notebook is still under construction*,a5ee83ca,0
+196,b2060f881234ac,181a86f3,"****This notebook shows the power of AutoML. I used AutoGluon for this example. With a few lines of code and zero pre-processing and clean up, I am able to get highly accurate result. Cross validation on training data is 0.8664 while submission public score on test data was 0.80143
+
+****The final model is an ensemble of a few algortihms.
+
+****There is an issue running Autogluon on Kaggle, most likely is due to incompatible versions of Scikit-Learn. I ran this code in Google Colab instead. Hope it works for you if you are trying.",47e2f462,0
+197,b2055e309d6a87,a09f56f4,"Nama : Hizkia Indra Purwanto
+NIM : 17.01.53.0025
+PT : Unisbank",1c660276,0
+201,59c2108e927f4f,9b895940,"# Women Entrepreurship and Labor Force
+
+",1de0657a,0
+202,59bcf704006534,ffdb2bb0,# Pretrained Image Model to Predict Pet Popularity,5cfc3852,0
